@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="/static/layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+
+<div class="demoTable" style="margin:15px">
+  搜索名称：
+  <div class="layui-inline">
+      <input class="layui-input" name="xxxxx" id="demoReload"  autocomplete="off">
+  </div>
+  <button class="layui-btn search" type="button">搜索</button>
+
+    <button type="button" class="layui-btn layui-btn-primary" id="test4">新建模板</button>
+</div>
+
+<table class="layui-hide" id="LAY_table_user" lay-filter="user"></table>
+
+
+<script src="/static/layui/layui.js" charset="utf-8"></script>
+<script>
+layui.use(['upload', 'table','jquery'], function(){
+  var table = layui.table;
+  var upload = layui.upload;
+  var $ = layui.$, active = {
+    reload: function(){
+      var demoReload = $('#demoReload');
+
+      //执行重载
+      table.reload('testReload', {
+        page: {
+          curr: 1 //重新从第 1 页开始
+        }
+        ,where: {
+          key: {
+            id: demoReload.val()
+          }
+        }
+      }, 'data');
+    }
+  };
+
+  //方法级渲染
+  $('.search').on('click',function () {
+     table.reload("testReload",{
+            page: {
+                curr: 1 //重新从第 1 页开始
+                },
+            where: {
+                key: $("#demoReload").val(),  //搜索的关键字
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }
+        });
+  });
+  table.render({
+    elem: '#LAY_table_user'
+    ,url: '{% url 'template_list' %}'
+      ,method: 'post'
+    ,cols: [[
+      {checkbox: true, fixed: true}
+      {#,{field:'id', title: 'ID', sort: true, fixed: true}#}
+      ,{field:'name', title: '模板名称'}
+      ,{field:'status', title: '模板状态',align:'center', templet:function(d){
+          if(d.status===0){
+              return '正常'
+          }else{
+              return '需要更新'
+          }
+      }}
+      ,{fixed: 'right', title: '操作',  width:300, align:'center', templet:function(d){
+          if(d.status===1){
+              t_status = 'disabled="true"';
+              t_status_class = 'layui-disabled'
+          }else{
+              t_status='';
+              t_status_class='';
+          }
+          bar = '<a class="layui-btn layui-btn-primary layui-btn-xs detail_template '+t_status_class+'" '+t_status+' template_id ="'+d.id+'">查看</a>';
+          bar += '<a class="layui-btn layui-btn-primary layui-btn-xs edit_template" template_id ="'+d.id+'">编辑</a>';
+          bar += '<a class="layui-btn layui-btn-primary layui-btn-xs deploy_template" template_id ="'+d.id+'">部署</a>';
+          bar += '<a class="layui-btn layui-btn-danger layui-btn-xs delete_template" template_id="'+d.id+'">删除</a>';
+        return bar
+      }}
+    ]]
+
+    ,id: 'testReload'
+    ,page: true
+    ,height: 310
+      ,where: {
+        'csrfmiddlewaretoken':'{{ csrf_token }}'
+    },
+  });
+
+  $('#test4').on('click',function () {
+    var info = $(this);
+      var yaml_id = info.attr('yaml_id');
+      layer.open({
+          type: 2,
+          title: '新建模板',
+          shadeClose: true,
+          shade: false,
+          maxmin: false, //开启最大化最小化按钮
+          area: ['900px','590px'],
+          content: '{% url 'template_create' %}'
+        });
+  });
+
+
+  $('.demoTable .layui-btn').on('click', function(){
+    var type = $(this).data('type');
+    active[type] ? active[type].call(this) : '';
+  });
+  $('body').delegate(".detail_template","click",function () {
+      var info = $(this);
+      if(info.attr('disabled')==='disabled'){
+          layer.msg('已被禁用')
+      }else{
+          var template_id = info.attr('template_id');
+          layer.open({
+              id: '1',
+              type: 2,
+              title: '模板详情',
+              shadeClose: true,
+              shade: false,
+              maxmin: false, //开启最大化最小化按钮
+              area: ['900px','590px'],
+              content: '{% url 'template_detail' %}'+'?template_id='+ template_id
+            });
+
+      }
+  }).delegate(".delete_template","click",function () {
+      var info = $(this);
+      var template_id = info.attr('template_id');
+      layer.confirm('您是否要删除数据？', {
+              btn: ['确认', '取消'] //按钮//
+          }, function(){
+            $.ajax({
+                type:'POST',
+                url: '{% url 'del_template' %}',
+                timeout : 100000,
+                data:{
+                    id:template_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },success: function (data) {
+                    layer.msg(data['msg'],{time: 5000});
+                    table.reload("testReload",{
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        },
+                        where: {
+                            key: $(".searchVal").val(),  //搜索的关键字
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }
+                    })
+                },error:function () {
+                    layer.msg('糟糕，请求失败了！');
+                }
+            });
+      })
+  }).delegate(".edit_template","click",function () {
+      var info = $(this);
+      var template_id = info.attr('template_id');
+      layer.open({
+          type: 2,
+          title: '编辑模板',
+          shadeClose: true,
+          shade: false,
+          maxmin: false, //开启最大化最小化按钮
+          area: ['900px','590px'],
+          content: '{% url 'template_edit' %}'+'?template_id='+template_id
+        });
+
+  }).delegate(".deploy_template","click",function () {
+      var info = $(this);
+      var yaml_id = info.attr('yaml_id');
+      layer.open({
+          id: '1',
+          type: 2,
+          title: '编辑yaml',
+          shadeClose: true,
+          shade: false,
+          maxmin: false, //开启最大化最小化按钮
+          area: ['1100px','700px'],
+          content: '{% url 'connection_cluster' %}'+'?yaml_id='+yaml_id
+        });
+
+  })
+
+});
+</script>
+
+</body>
+</html>

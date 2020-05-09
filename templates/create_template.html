@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="/static/codemirror/lib/codemirror.css">
+    <link rel="stylesheet" href="/static/layui/css/layui.css">
+    <link href="/static/codemirror/lib/codemirror.css" rel="stylesheet" type="text/css">
+    <link href="/static/codemirror/theme/monokai.css" rel="stylesheet" type="text/css">
+    <link href="/static/layui/css/admin.css" rel="stylesheet" type="text/css">
+    <link href="/static/codemirror/addon/display/fullscreen.css" rel="stylesheet" type="text/css">
+    <style>
+        .CodeMirror {
+            font-size: 17px;
+        }
+        html,body{
+                height:100%;
+            }
+    </style>
+</head>
+<body style="padding: 10px">
+<div class="layui-fluid">
+    <div class="layui-row layui-col-space15">
+        <div class="layui-col-sm12">
+            <div class="layui-card">
+                <div class="layui-card-header">
+                    创建模板
+                </div>
+                <div class="layui-card-body">
+                    <div class="layui-row">
+                        <div class="layui-col-sm6">
+                            <form class="layui-form" action="">
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">模板名称</label>
+                                <div class="layui-input-block">
+                                  <input type="text" autocomplete="off" placeholder="请输入参数名称" class="layui-input template_name">
+                                </div>
+                              </div>
+                              <div class="layui-form-item">
+                                <label class="layui-form-label">关联模板</label>
+                                <div class="layui-input-block">
+                                  <select name="city" lay-filter="template" class="template_id">
+                                      <option value="">请选择一个模板</option>
+                                      {{ template_info }}
+                                      {% for t in template_info %}
+                                      <option value="{{t.id}}">{{ t.name }}</option>
+                                      {% endfor %}
+                                  </select>
+                                </div>
+                              </div>
+                              <div class="layui-form-item arg_item" style="display: none">
+                                <label class="layui-form-label">参数内容</label>
+                                <div class="layui-input-block arg_html">
+                                </div>
+                              </div>
+
+
+                              <div class="layui-form-item">
+                                <div class="layui-input-block">
+                                  <button type="button" class="layui-btn create_template">立即提交</button>
+                                </div>
+                              </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="/static/js/jquery.min.js"></script>
+<script src="/static/layui/layui.js"></script>
+<script>
+//JavaScript代码区域
+function render_area(name,content){
+    return `                        <fieldset class="layui-elem-field">
+                                      <legend>`+name+`</legend>
+                                      <div class="layui-field-box">
+                                          `+content+`
+                                      </div>
+                                    </fieldset>`
+}
+function render_arg_input(yaml_id,name){
+return `                          <div class="layui-form-item">
+                                    <label class="layui-form-label">`+name+`</label>
+                                    <div class="layui-input-block">
+                                      <input type="text" autocomplete="off" yaml_id="`+yaml_id+`" arg_name="`+name+`" placeholder="请填写变量`+name+`的值" class="layui-input args">
+                                    </div>
+                                  </div>`
+}
+console.log(render_area(1,2));
+layui.use(['form'], function(){
+    var form = layui.form;
+    form.on('select(template)', function(data){
+        if(data.value!==""){
+            $.ajax({
+                type:'POST',
+                url: '{% url 'get_template_args' %}',
+                timeout : 100000,
+                data:{
+                    template_id:data.value,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },success: function (data) {
+                    console.log(JSON.stringify(data));
+                    var html_content='';
+                    $.each(data.data,function(index,value){
+                         var yaml_name = value.name;
+                         var yaml_id = value.id;
+                         var yaml_arg_input_html = '';
+                         $.each(value.args,function(index,value){
+                            yaml_arg_input_html+=render_arg_input(yaml_id,value)
+                        });
+                        html_content += render_area(yaml_name,yaml_arg_input_html)
+                    });
+                    $('.arg_html').html(html_content);
+                    $('.arg_item').show()
+
+                },error:function () {
+                    alert('糟糕，请求失败了！');
+                }
+            });
+        }else {
+            $('.arg_item').hide()
+        }
+
+    });
+});
+</script>
+<script>
+
+    $('body').delegate('.create_template','click',function () {
+        var args_info = []
+        $('.args').each(function (index) {
+            tmp = {};
+            tmp['yaml_id']=$(this).attr('yaml_id');
+            tmp['arg_name']=$(this).attr('arg_name');
+            tmp['value']=$(this).val();
+            args_info.push(tmp)
+        })
+        $.ajax({
+            type:'POST',
+            url: '{% url 'template_create' %}',
+            timeout : 100000,
+            data:{
+                template_name:$('.template_name').val(),
+                template_id:$('.template_id').val(),
+                args_info:JSON.stringify(args_info),
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            },success: function (data) {
+                alert(data['msg']);
+            },error:function () {
+                alert('糟糕，请求失败了！');
+            }
+         });
+    })
+
+
+</script>
+
+</body>
+</html>

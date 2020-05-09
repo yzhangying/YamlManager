@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+    <style>
+        .main{
+            text-align: center; /*让div内部文字居中*/
+            background-color: #F0F0F0;
+            border-radius: 20px;
+            width: 400px;
+            height: 450px;
+            margin: auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+</head>
+<body style="background-color: #97cbff;">
+    <div class="main">
+        <h1 style="margin-top: 50px">部署集群</h1>
+        <input id="cluster_ip" style="margin-top: 120px" value="http://test.com" disabled>
+        <input type="button" class="btn btn-success connection" onclick="clickButton(this)" value="连接"/>
+    </div>
+    <script src="//cdn.bootcdn.net/ajax/libs/jquery/3.5.0/jquery.js"></script>
+    <script>
+        /**
+         * @return {boolean}
+         */
+        function IsURL (str_url) {
+            var strRegex = '^((https|http|ftp|rtsp|mms)?://)'
+                + '?(([0-9a-z_!~*\'().&=+$%-]+: )?[0-9a-z_!~*\'().&=+$%-]+@)?' //ftp的user@
+                + '(([0-9]{1,3}.){3}[0-9]{1,3}' // IP形式的URL- 199.194.52.184
+                + '|' // 允许IP和DOMAIN（域名）
+                + '([0-9a-z_!~*\'()-]+.)*' // 域名- www.
+                + '([0-9a-z][0-9a-z-]{0,61})?[0-9a-z].' // 二级域名
+                + '[a-z]{2,6})' // first level domain- .com or .museum
+                + '(:[0-9]{1,4})?' // 端口- :80
+                + '((/?)|' // a slash isn't required if there is no file name
+                + '(/[0-9a-z_!~*\'().;?:@&=+$,%#-]+)+/?)$';
+            var re=new RegExp(strRegex);
+            //re.test()
+            return re.test(str_url);
+        }
+        $('.connection').on('click',function () {
+            var url = $('#cluster_ip').val();
+            if(url===''||url===undefined){
+                alert('集群地址不得为空')
+                return false;
+            }else if(!IsURL(url)){
+                alert('集群地址不合法')
+                return false;
+            }else if(url!=="http://test.com"){
+                alert('仅支持输入测试地址：http://test.com')
+                return false;
+            }else{
+                alert('连接成功');
+                {#window.location.href="{% url 'manage' %}"#}
+            }
+        })
+        function clickButton(obj){
+
+            var obj = $(obj);
+            obj.attr("disabled","disabled");
+            var time = 10;
+            var set=setInterval(function(){
+            obj.val("创建中.."+--time+"(s)");
+            }, 1000);
+
+            setTimeout(function(){
+            obj.val("创建完毕");
+            clearInterval(set);
+            alert('部署成功');
+            }, 10000);
+
+        }
+
+    </script>
+</body>
+</html>
+

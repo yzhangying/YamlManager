@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Layui</title>
+  <meta name="renderer" content="webkit">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="stylesheet" href="/static/layui/css/layui.css"  media="all">
+  <!-- 注意：如果你直接复制所有代码到本地，上述css路径需要改成你本地的 -->
+</head>
+<body>
+
+<div class="demoTable" style="margin:15px">
+  搜索名称：
+  <div class="layui-inline">
+      <input class="layui-input" name="xxxxx" id="demoReload" autocomplete="off">
+  </div>
+  <button class="layui-btn search" type="button">搜索</button>
+
+    <button type="button" class="layui-btn layui-btn-primary" id="test4"><i class="layui-icon"></i>上传yaml模板</button>
+</div>
+
+<table class="layui-hide" id="LAY_table_user" lay-filter="user"></table>
+
+
+<script src="/static/layui/layui.js" charset="utf-8"></script>
+{#<script type="text/html" id="barDemo">#}
+{#  <a class="layui-btn layui-btn-primary layui-btn-xs detail_file">查看</a>#}
+{#  <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>#}
+{#  <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>#}
+{#</script>#}
+<!-- 注意：如果你直接复制所有代码到本地，上述js路径需要改成你本地的 -->
+<script>
+layui.use(['upload', 'table','jquery'], function(){
+  var table = layui.table;
+  var upload = layui.upload;
+  var $ = layui.$, active = {
+    reload: function(){
+      var demoReload = $('#demoReload');
+
+      //执行重载
+      table.reload('testReload', {
+        page: {
+          curr: 1 //重新从第 1 页开始
+        }
+        ,where: {
+          key: {
+            id: demoReload.val()
+          }
+        }
+      }, 'data');
+    }
+  };
+
+  //方法级渲染
+  $('.search').on('click',function () {
+     table.reload("testReload",{
+            page: {
+                curr: 1 //重新从第 1 页开始
+                },
+            where: {
+                key: $("#demoReload").val(),  //搜索的关键字
+                csrfmiddlewaretoken: '{{ csrf_token }}'
+            }
+        });
+  });
+  table.render({
+    elem: '#LAY_table_user'
+    ,url: '{% url 'template_manage' %}'
+      ,method: 'post'
+    ,cols: [[
+      {checkbox: true, fixed: true}
+      {#,{field:'id', title: 'ID', sort: true, fixed: true}#}
+      ,{field:'name', title: 'yaml名称'}
+       ,{field:'template_name', title: '模板名称'}
+      ,{fixed: 'right', title: '操作',  width:300, align:'center', templet:function(d){
+          bar = '<a class="layui-btn layui-btn-primary layui-btn-xs detail_file" yaml_id="'+d.id+'">查看</a>';
+          bar +='<a class="layui-btn layui-btn-xs edit_yaml"  yaml_id="'+d.id+'">编辑</a>';
+          bar += '<a class="layui-btn layui-btn-danger layui-btn-xs delete_yaml" yaml_id="'+d.id+'">删除</a>';
+        return bar
+      }}
+    ]]
+
+    ,id: 'testReload'
+    ,page: true
+    ,height: 310
+      ,where: {
+        'csrfmiddlewaretoken':'{{ csrf_token }}'
+    },
+  });
+
+
+
+  $('.demoTable .layui-btn').on('click', function(){
+    var type = $(this).data('type');
+    active[type] ? active[type].call(this) : '';
+  });
+  upload.render({ //允许上传的文件后缀
+    elem: '#test4'
+    ,url: '{% url 'upload_file' %}' //改成您自己的上传接口
+    ,accept: 'file' //普通文件
+    ,exts: 'yaml' //只允许上传压缩文件
+    ,done: function(res){
+        console.log(JSON.stringify(res));
+      layer.msg(res['msg']);
+      table.reload("testReload",{
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                        },
+                    where: {
+                        key: $(".searchVal").val(),  //搜索的关键字
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    }
+                });
+      console.log(res)
+    }
+    ,data: {
+        'csrfmiddlewaretoken':'{{ csrf_token }}'
+    },
+  });
+  $('body').delegate(".detail_file","click",function () {
+      var info = $(this);
+      var yaml_id = info.attr('yaml_id');
+      layer.open({
+          id: '2',
+          type: 2,
+          title: 'yaml详情',
+          shadeClose: true,
+          shade: false,
+          maxmin: false, //开启最大化最小化按钮
+          area: ['1000px','700px'],
+          content: '{% url 'detail_files' %}'+'?yaml_id='+yaml_id
+        });
+
+  }).delegate(".delete_yaml","click",function () {
+      var info = $(this);
+      var yaml_id = info.attr('yaml_id');
+      layer.confirm('您是否要删除数据？', {
+              btn: ['确认', '取消'] //按钮//
+          }, function(){
+            $.ajax({
+                type:'POST',
+                url: '{% url 'del_file' %}',
+                timeout : 100000,
+                data:{
+                    id:yaml_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },success: function (data) {
+                    layer.msg(data['msg'],{time: 5000});
+                    table.reload("testReload",{
+                        page: {
+                            curr: 1 //重新从第 1 页开始
+                        },
+                        where: {
+                            key: $(".searchVal").val(),  //搜索的关键字
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        }
+                    })
+                },error:function () {
+                    layer.msg('糟糕，请求失败了！');
+                }
+            });
+      })
+  }).delegate(".edit_yaml","click",function () {
+      var info = $(this);
+      var yaml_id = info.attr('yaml_id');
+      layer.open({
+          id: '1',
+          type: 2,
+          title: '编辑yaml',
+          shadeClose: true,
+          shade: false,
+          maxmin: false, //开启最大化最小化按钮
+          area: ['1100px','700px'],
+          content: '{% url 'edit_yaml' %}'+'?yaml_id='+yaml_id
+        });
+
+  })
+
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>模板管理后台</title>
+  <link rel="stylesheet" href="/static/layui/css/layui.css">
+</head>
+<body class="layui-layout-body">
+<div class="layui-layout layui-layout-admin">
+  <div class="layui-header">
+    <div class="layui-logo">管理后台</div>
+    <ul class="layui-nav layui-layout-right">
+      <li class="layui-nav-item">
+        <a href="javascript:;">
+          <img src="http://t.cn/RCzsdCq" class="layui-nav-img">
+          张莹
+        </a>
+        <dl class="layui-nav-child">
+          <dd><a href="#">基本资料</a></dd>
+          <dd><a href="#">安全设置</a></dd>
+        </dl>
+      </li>
+      <li class="layui-nav-item"><a href="{% url 'logout' %}">退出</a></li>
+    </ul>
+  </div>
+
+  <div class="layui-side layui-bg-black">
+    <div class="layui-side-scroll">
+      <ul class="layui-nav layui-nav-tree"  lay-filter="test">
+        <li class="layui-nav-item layui-nav-itemed">
+          <a class="" href="javascript:; ">部署管理</a>
+          <dl class="layui-nav-child">
+            <dd><a target="main_self_frame" href="{% url 'template_manage' %}">模板管理</a></dd>
+              <dd><a target="main_self_frame" href="{% url 'template_list' %}">模板列表</a></dd>
+          </dl>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+
+  <div class="layui-body">
+    <!-- 内容主体区域 -->
+           <iframe  id="main_self_frame" style="width: 100%;height: 100%" src="{% url 'template_manage' %}" name="main_self_frame" frameborder="50" class="layadmin-iframe">
+  </div>
+
+  <div class="layui-footer">
+    <!-- 底部固定区域 -->
+    © layui.com - 底部固定区域
+  </div>
+</div>
+<script src="/static/layui/layui.js"></script>
+<script>
+//JavaScript代码区域
+layui.use('element', function(){
+  var element = layui.element;
+
+});
+</script>
+</body>
+</html>

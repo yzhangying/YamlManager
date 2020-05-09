@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+    <style>
+        .main{
+            text-align: center; /*让div内部文字居中*/
+            background-color: #fff;
+            border-radius: 20px;
+            width: 400px;
+            height: 450px;
+            margin: auto;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    </style>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+</head>
+<body style="background-color: #FFE66F;">
+    <div class="main">
+        <h1 style="margin-top: 50px">集群管理</h1>
+        <div>
+            <button type="button" class="btn btn-success create" value="点击创建集群" style="margin-top: 130px;" onclick="clickButton(this)"></button>
+        </div>
+    </div>
+<script src="//cdn.bootcdn.net/ajax/libs/jquery/3.5.0/jquery.js"></script>
+<script>
+    function clickButton(obj){
+
+        var obj = $(this);
+        obj.attr("disabled","disabled");
+        var time = 10;
+        var set=setInterval(function(){
+        obj.val("模拟创建中.."+--time+"(s)");
+        }, 1000);
+
+        setTimeout(function(){
+        obj.attr("disabled",false).val("创建完毕");
+        clearInterval(set);
+        }, 10000);
+    }
+
+</script>
+</body>
+</html>
+
